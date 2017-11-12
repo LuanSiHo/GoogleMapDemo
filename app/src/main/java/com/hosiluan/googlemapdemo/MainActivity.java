@@ -33,22 +33,15 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (!checkLocationPermission()) {
-            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-            alertDialog.setTitle("Alert");
-            alertDialog.setMessage("You do not enable location service, some feature won't work");
-            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Got it",
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    });
-            alertDialog.show();
-        }
         getCurrentLocation();
         handleMessage();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+    }
 
     public void createMap() {
         SupportMapFragment supportMapFragment = (SupportMapFragment)
@@ -131,6 +124,8 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback {
                 if (checkLocationPermission()) {
                     getLocation();
                 } else {
+
+
                     requestLocationPermission();
                 }
             }

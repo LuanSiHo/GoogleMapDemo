@@ -2,6 +2,8 @@ package com.hosiluan.googlemapdemo;
 
 import android.*;
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -83,6 +85,17 @@ public class BaseActivity extends AppCompatActivity {
                     getLocation();
 
                 } else {
+                    if (!checkLocationPermission()) {
+                        AlertDialog alertDialog = new AlertDialog.Builder(BaseActivity.this).create();
+                        alertDialog.setTitle("Alert");
+                        alertDialog.setMessage("You do not enable location service, some feature won't work");
+                        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Got it", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                        alertDialog.show();
+                    }
                     Toast.makeText(this, "need your location", Toast.LENGTH_SHORT).show();
                 }
                 break;
