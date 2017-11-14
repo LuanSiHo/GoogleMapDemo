@@ -1,11 +1,15 @@
 package com.hosiluan.googlemapdemo.model;
 
 /**
- * Created by User on 11/13/2017.
+ * Created by User on 11/14/2017.
  */
+
+
 public class MyPojo
 {
     private Results[] results;
+
+    private String[] html_attributions;
 
     private String status;
 
@@ -17,6 +21,16 @@ public class MyPojo
     public void setResults (Results[] results)
     {
         this.results = results;
+    }
+
+    public String[] getHtml_attributions ()
+    {
+        return html_attributions;
+    }
+
+    public void setHtml_attributions (String[] html_attributions)
+    {
+        this.html_attributions = html_attributions;
     }
 
     public String getStatus ()
@@ -32,6 +46,7 @@ public class MyPojo
     @Override
     public String toString()
     {
-        return "ClassPojo [results = "+results+", status = "+status+"]";
+        return "ClassPojo [results = "+results+", html_attributions = "+html_attributions+", status = "+status+"]";
     }
 }
+

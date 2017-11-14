@@ -4,6 +4,7 @@ import com.hosiluan.googlemapdemo.model.MyPojo;
 import com.hosiluan.googlemapdemo.model.PlaceModel;
 
 import java.util.List;
+import java.util.Observable;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -15,7 +16,13 @@ import retrofit2.http.Query;
 
 public interface PlaceService {
 
+//    @GET("json")
+//    io.reactivex.Observable<MyPojo> getPlaceList(@Query("query") String address,
+//                                                 @Query("key") String key);
+
     @GET("json")
-    Call<MyPojo> getPlaceList(@Query("address") String address);
+
+    Call<MyPojo> getPlaceList(@Query("query") String address,
+                              @Query("key") String key);
 
 }

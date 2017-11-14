@@ -2,7 +2,9 @@ package com.hosiluan.googlemapdemo.retrofit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
+import io.reactivex.plugins.RxJavaPlugins;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -22,6 +24,7 @@ public class RetrofitClient {
             sRetrofit = new Retrofit.Builder()
                     .baseUrl(baseUrl)
                     .addConverterFactory(GsonConverterFactory.create(gson))
+                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                     .build();
         }
         return sRetrofit;

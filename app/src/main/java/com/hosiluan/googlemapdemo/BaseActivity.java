@@ -34,8 +34,6 @@ public class BaseActivity extends AppCompatActivity {
 
     private double mLon, mLat;
 
-
-
     public double getmLon() {
         return mLon;
     }

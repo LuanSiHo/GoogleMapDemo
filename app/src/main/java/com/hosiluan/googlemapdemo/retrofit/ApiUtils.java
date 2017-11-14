@@ -5,7 +5,7 @@ package com.hosiluan.googlemapdemo.retrofit;
  */
 
 public class ApiUtils {
-    public static final String baseUrl = "http://maps.google.com/maps/api/geocode/";
+    public static final String baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/";
 
     public static PlaceService getPlaceService(){
         return RetrofitClient.getClient(baseUrl).create(PlaceService.class);

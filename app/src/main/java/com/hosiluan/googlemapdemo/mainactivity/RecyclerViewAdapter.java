@@ -21,10 +21,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     private Context mContext;
     private ArrayList<Results> mResults;
+    private  RecyclerViewAdapterListener mRecyclerViewAdapterListener;
 
-    public RecyclerViewAdapter(Context mContext, ArrayList<Results> mResults) {
+    public RecyclerViewAdapter(Context mContext, ArrayList<Results> mResults,
+                               RecyclerViewAdapterListener mRecyclerViewAdapterListener) {
         this.mContext = mContext;
         this.mResults = mResults;
+        this.mRecyclerViewAdapterListener = mRecyclerViewAdapterListener;
     }
 
     @Override
@@ -34,9 +37,17 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     @Override
-    public void onBindViewHolder(MyViewHolder holder, int position) {
+    public void onBindViewHolder(MyViewHolder holder, final int position) {
         Results results = mResults.get(position);
-        holder.textView.setText(results.getFormatted_address());
+        holder.placeTextView.setText(results.getName());
+        holder.addressTextView.setText(results.getFormatted_address());
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRecyclerViewAdapterListener.onItemClick(position);
+            }
+        });
     }
 
     @Override
@@ -49,11 +60,16 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     class MyViewHolder extends RecyclerView.ViewHolder {
 
-        TextView textView;
+        TextView placeTextView,addressTextView;
 
         public MyViewHolder(View itemView) {
             super(itemView);
-            textView = (TextView) itemView.findViewById(R.id.tv_place);
+            placeTextView = (TextView) itemView.findViewById(R.id.tv_place);
+            addressTextView = (TextView) itemView.findViewById(R.id.tv_address);
         }
+    }
+
+    interface  RecyclerViewAdapterListener{
+        void onItemClick(int position);
     }
 }

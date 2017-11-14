@@ -1,19 +1,53 @@
 package com.hosiluan.googlemapdemo.model;
 
 /**
- * Created by User on 11/13/2017.
+ * Created by User on 11/14/2017.
  */
+
+
 public class Results
 {
+    private Photos[] photos;
+
+    private String id;
+
     private String place_id;
 
-    private Address_components[] address_components;
+    private String icon;
+
+    private String name;
 
     private String formatted_address;
 
+    private String rating;
+
     private String[] types;
 
+    private String reference;
+
+    private Opening_hours opening_hours;
+
     private Geometry geometry;
+
+    public Photos[] getPhotos ()
+    {
+        return photos;
+    }
+
+    public void setPhotos (Photos[] photos)
+    {
+        this.photos = photos;
+    }
+
+    public String getId ()
+    {
+        return id;
+    }
+
+    public void setId (String id)
+    {
+        this.id = id;
+    }
 
     public String getPlace_id ()
     {
@@ -25,14 +59,24 @@ public class Results
         this.place_id = place_id;
     }
 
-    public Address_components[] getAddress_components ()
+    public String getIcon ()
     {
-        return address_components;
+        return icon;
     }
 
-    public void setAddress_components (Address_components[] address_components)
+    public void setIcon (String icon)
     {
-        this.address_components = address_components;
+        this.icon = icon;
+    }
+
+    public String getName ()
+    {
+        return name;
+    }
+
+    public void setName (String name)
+    {
+        this.name = name;
     }
 
     public String getFormatted_address ()
@@ -45,6 +89,16 @@ public class Results
         this.formatted_address = formatted_address;
     }
 
+    public String getRating ()
+    {
+        return rating;
+    }
+
+    public void setRating (String rating)
+    {
+        this.rating = rating;
+    }
+
     public String[] getTypes ()
     {
         return types;
@@ -53,6 +107,26 @@ public class Results
     public void setTypes (String[] types)
     {
         this.types = types;
+    }
+
+    public String getReference ()
+    {
+        return reference;
+    }
+
+    public void setReference (String reference)
+    {
+        this.reference = reference;
+    }
+
+    public Opening_hours getOpening_hours ()
+    {
+        return opening_hours;
+    }
+
+    public void setOpening_hours (Opening_hours opening_hours)
+    {
+        this.opening_hours = opening_hours;
     }
 
     public Geometry getGeometry ()
@@ -68,7 +142,6 @@ public class Results
     @Override
     public String toString()
     {
-        return "ClassPojo [place_id = "+place_id+", address_components = "+address_components+", formatted_address = "+formatted_address+", types = "+types+", geometry = "+geometry+"]";
+        return "ClassPojo [photos = "+photos+", id = "+id+", place_id = "+place_id+", icon = "+icon+", name = "+name+", formatted_address = "+formatted_address+", rating = "+rating+", types = "+types+", reference = "+reference+", opening_hours = "+opening_hours+", geometry = "+geometry+"]";
     }
 }
-

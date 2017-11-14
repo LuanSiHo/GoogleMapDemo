@@ -1,17 +1,23 @@
 package com.hosiluan.googlemapdemo.mainactivity;
 
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -30,21 +36,23 @@ import com.hosiluan.googlemapdemo.model.Results;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
-        MainActivityPresenter.MainActivitPresenterListener{
+public class MainActivity extends BaseActivity implements OnMapReadyCallback,
+        MainActivityPresenter.MainActivitPresenterListener,RecyclerViewAdapter.RecyclerViewAdapterListener {
 
 
     private GoogleMap mGoogleMap;
     private EditText mSearchPlaceEditText;
+    private ImageView mSearImageButton;
+    private TextView mNumberOfPlaceTextView;
 
     private MainActivityPresenter mMainActivityPresenter;
 
     private RecyclerView mRecyclerView;
     private ArrayList<Results> mResultsArrayList;
     private RecyclerViewAdapter mRecyclerViewAdapter;
+    private LinearLayout mLinearLayoutSearch;
 
     View mMapView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,13 +83,20 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
 
     private void setView() {
         mSearchPlaceEditText = (EditText) findViewById(R.id.edt_search_place);
+        mSearImageButton = (ImageView) findViewById(R.id.img_btn_search);
+        mNumberOfPlaceTextView = (TextView) findViewById(R.id.tv_number_of_place);
+
         mMainActivityPresenter = new MainActivityPresenter(this);
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_place);
 
         mResultsArrayList = new ArrayList<>();
-        mRecyclerViewAdapter = new RecyclerViewAdapter(getApplicationContext(),mResultsArrayList);
+        mRecyclerViewAdapter = new RecyclerViewAdapter(getApplicationContext(), mResultsArrayList,
+                this);
         mRecyclerView.setAdapter(mRecyclerViewAdapter);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext(),LinearLayoutManager.VERTICAL,false));
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext(),
+                LinearLayoutManager.VERTICAL, false));
+
+        mLinearLayoutSearch = (LinearLayout) findViewById(R.id.linearlayout_search);
 
     }
 
@@ -96,6 +111,40 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
                     return true;
                 }
                 return false;
+            }
+        });
+
+
+        mSearchPlaceEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+
+                int temp = s.length() > 2 ? s.length() : 0;
+
+                if (s.length() > 2 && temp > 0 && (s.length() % temp == 0) ){
+                    mLinearLayoutSearch.setVisibility(View.VISIBLE);
+                    String text = s.toString().replaceAll("\\s+", " ");
+                    if (text.length() > 0 && !text.equals(" ")){
+                        mMainActivityPresenter.searchPlace(text);
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+                if (s.length() <= 0 || s.equals(" ")){
+                    mResultsArrayList.clear();
+                    mRecyclerViewAdapter.notifyDataSetChanged();
+                    mLinearLayoutSearch.setVisibility(View.GONE);
+                    mSearchPlaceEditText.setText("");
+                }
             }
         });
     }
@@ -115,6 +164,7 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
         LatLng latLng = new LatLng(getmLat(), getmLon());
 
         moveToCurrentLocation(googleMap, latLng);
+        addMarker(googleMap,"Your location","JV-IT",latLng);
 
         if (mMapView != null
                 && mMapView.findViewById(Integer.parseInt("1")) != null) {
@@ -126,6 +176,7 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
                 public void onClick(View v) {
                     getCurrentLocation();
                     moveToCurrentLocation(googleMap, new LatLng(getmLat(), getmLon()));
+                    addMarker(googleMap,"Your location","JV-IT",new LatLng(getmLat(), getmLon()));
                 }
             });
 
@@ -152,13 +203,16 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
         mGoogleMap.setMyLocationEnabled(true);
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13));
 
-        mGoogleMap.addMarker(new MarkerOptions()
-                .title("Your Location")
-                .snippet("JV-IT company")
-                .position(latLng)).showInfoWindow();
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(latLng);
         mGoogleMap.moveCamera(cameraUpdate);
         mGoogleMap.animateCamera(cameraUpdate);
+    }
+
+    private void addMarker(GoogleMap  mGoogleMap, String title,String snippet, LatLng latLng){
+        mGoogleMap.addMarker(new MarkerOptions()
+        .title(title)
+        .snippet(snippet)
+        .position(latLng)).showInfoWindow();
     }
 
     private void handleMessage() {
@@ -175,7 +229,6 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
         });
     }
 
-
     public void getCurrentLocation() {
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -184,7 +237,6 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
                     getLocation();
                 } else {
 
-
                     requestLocationPermission();
                 }
             }
@@ -192,17 +244,33 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback ,
         thread.start();
     }
 
-
     @Override
     public void onSearchResult(Results[] results) {
-        if (results.length > 0){
+        if (results.length > 0) {
             CoreApplication.getInstance().logDebug(results[0].getFormatted_address());
             CoreApplication.getInstance().logDebug(results.length + " length");
 
-            for (int i = 0; i < results.length; i ++){
+            mResultsArrayList.clear();
+            mLinearLayoutSearch.setVisibility(View.VISIBLE);
+            mNumberOfPlaceTextView.setText(results.length + " places");
+
+            for (int i = 0; i < results.length; i++) {
                 mResultsArrayList.add(results[i]);
                 mRecyclerViewAdapter.notifyDataSetChanged();
             }
         }
+    }
+
+    @Override
+    public void onItemClick(int position) {
+        CoreApplication.getInstance().logDebug("item click");
+
+        double lat = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLat());
+        double lon = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLng());
+        moveToCurrentLocation(mGoogleMap,new LatLng(lat,lon));
+        addMarker(mGoogleMap,mResultsArrayList.get(position).getName(),
+                mResultsArrayList.get(position).getFormatted_address(),new LatLng(lat,lon));
+        mLinearLayoutSearch.setVisibility(View.GONE);
+        mSearchPlaceEditText.setText("");
     }
 }

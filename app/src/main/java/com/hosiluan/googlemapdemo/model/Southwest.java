@@ -1,7 +1,7 @@
 package com.hosiluan.googlemapdemo.model;
 
 /**
- * Created by User on 11/13/2017.
+ * Created by User on 11/14/2017.
  */
 
 public class Southwest

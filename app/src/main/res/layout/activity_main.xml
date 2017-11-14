@@ -16,6 +16,7 @@
           android:layout_width="match_parent"
           android:layout_height="wrap_content">
          <ImageView
+             android:id="@+id/img_btn_search"
              android:src="@drawable/ic_search"
              android:layout_width="wrap_content"
              android:layout_height="wrap_content"/>
@@ -29,18 +30,33 @@
       </android.support.v7.widget.Toolbar>
    </android.support.design.widget.AppBarLayout>
    <LinearLayout
+       android:background="#efeef4"
+       android:id="@+id/linearlayout_search"
+       android:visibility="gone"
        android:orientation="vertical"
        android:layout_width="match_parent"
        android:layout_height="wrap_content">
       <TextView
+          android:textStyle="bold"
+          android:paddingLeft="32dp"
+          android:paddingRight="16dp"
+          android:paddingTop="16dp"
+          android:paddingBottom="16dp"
+          android:textColor="#000"
+          android:textSize="16sp"
+          android:id="@+id/tv_number_of_place"
           android:text="ahihi"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"/>
+      <View
+          android:background="#a9a7a7"
+          android:layout_width="match_parent"
+          android:layout_height="1dp"/>
+
       <android.support.v7.widget.RecyclerView
           android:id="@+id/recyclerview_place"
           android:layout_width="match_parent"
-          android:layout_height="wrap_content">
-
+          android:layout_height="match_parent">
       </android.support.v7.widget.RecyclerView>
    </LinearLayout>
    <FrameLayout
