@@ -21,8 +21,9 @@ public interface PlaceService {
 //                                                 @Query("key") String key);
 
     @GET("json")
-
     Call<MyPojo> getPlaceList(@Query("query") String address,
                               @Query("key") String key);
 
+//    Call<com.hosiluan.googlemapdemo.model.mymodel.MyPojo> getPlaceList(@Query("query") String address,
+//                                                                       @Query("key") String key);
 }

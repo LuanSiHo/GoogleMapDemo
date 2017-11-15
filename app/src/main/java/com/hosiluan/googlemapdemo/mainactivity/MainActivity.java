@@ -2,6 +2,7 @@ package com.hosiluan.googlemapdemo.mainactivity;
 
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -26,19 +27,32 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.hosiluan.googlemapdemo.BaseActivity;
 import com.hosiluan.googlemapdemo.CoreApplication;
 import com.hosiluan.googlemapdemo.R;
+import com.hosiluan.googlemapdemo.model.LocationModel;
 import com.hosiluan.googlemapdemo.model.PlaceModel;
 import com.hosiluan.googlemapdemo.model.Results;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends BaseActivity implements OnMapReadyCallback,
-        MainActivityPresenter.MainActivitPresenterListener,RecyclerViewAdapter.RecyclerViewAdapterListener {
+        MainActivityPresenter.MainActivitPresenterListener, RecyclerViewAdapter.RecyclerViewAdapterListener {
 
+    ArrayList<PlaceModel> mPlaceModel = new ArrayList<>();
 
     private GoogleMap mGoogleMap;
     private EditText mSearchPlaceEditText;
@@ -51,6 +65,7 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
     private ArrayList<Results> mResultsArrayList;
     private RecyclerViewAdapter mRecyclerViewAdapter;
     private LinearLayout mLinearLayoutSearch;
+    private ArrayList<PlaceModel> mPlaceArrayList;
 
     View mMapView;
 
@@ -90,9 +105,14 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_place);
 
         mResultsArrayList = new ArrayList<>();
-        mRecyclerViewAdapter = new RecyclerViewAdapter(getApplicationContext(), mResultsArrayList,
+
+//        mRecyclerViewAdapter = new RecyclerViewAdapter(getApplicationContext(), mResultsArrayList,
+//                this);
+        mPlaceArrayList = new ArrayList<>();
+        mRecyclerViewAdapter = new RecyclerViewAdapter(getApplicationContext(), mPlaceArrayList,
                 this);
         mRecyclerView.setAdapter(mRecyclerViewAdapter);
+
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext(),
                 LinearLayoutManager.VERTICAL, false));
 
@@ -107,7 +127,20 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
 
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                    mMainActivityPresenter.searchPlace(mSearchPlaceEditText.getText().toString().trim());
+//                    mMainActivityPresenter.searchPlace(mSearchPlaceEditText.getText().toString().trim());
+
+                    mPlaceArrayList.clear();
+                    mRecyclerViewAdapter.notifyDataSetChanged();
+                    mLinearLayoutSearch.setVisibility(View.VISIBLE);
+
+                    String place = mSearchPlaceEditText.getText().toString().trim();
+                    String text = place.replaceAll("\\s+", "%20");
+
+                    new async().execute("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
+                            + text + "&key=AIzaSyAO2KYccvxhtise3plAZ47DA9a53GXdv4M");
+
+                    CoreApplication.getInstance().logDebug("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
+                            + text + "&key=AIzaSyAmVAh9yhy1g6M0wsiAjwzizJyQOyOa1vk");
                     return true;
                 }
                 return false;
@@ -125,25 +158,29 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
             public void onTextChanged(CharSequence s, int start, int before, int count) {
 
 
-                int temp = s.length() > 2 ? s.length() : 0;
-
-                if (s.length() > 2 && temp > 0 && (s.length() % temp == 0) ){
-                    mLinearLayoutSearch.setVisibility(View.VISIBLE);
-                    String text = s.toString().replaceAll("\\s+", " ");
-                    if (text.length() > 0 && !text.equals(" ")){
-                        mMainActivityPresenter.searchPlace(text);
-                    }
+                if (s.length() > 0) {
+//                    mLinearLayoutSearch.setVisibility(View.VISIBLE);
+////                    String text = s.toString().replaceAll("\\s+", " ");
+////                    if (text.length() > 0 && !text.equals(" ")) {
+//////                        mMainActivityPresenter.cancelRequest();
+////                        mMainActivityPresenter.searchPlace(text);
+////                    }
+////                    mMainActivityPresenter.searchPlace(mSearchPlaceEditText.getText().toString().trim());
+//
+                    String place = mSearchPlaceEditText.getText().toString().trim();
+                    new async().execute("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
+                            +place+"&key=AIzaSyB95jx_yE1DGcuTumosZ6XiOJ3Dv1IhCEc");
                 }
             }
 
             @Override
             public void afterTextChanged(Editable s) {
 
-                if (s.length() <= 0 || s.equals(" ")){
+                if (s.length() <= 0 || s.equals(" ")) {
+                    CoreApplication.getInstance().logDebug("clear text");
                     mResultsArrayList.clear();
                     mRecyclerViewAdapter.notifyDataSetChanged();
                     mLinearLayoutSearch.setVisibility(View.GONE);
-                    mSearchPlaceEditText.setText("");
                 }
             }
         });
@@ -164,7 +201,7 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
         LatLng latLng = new LatLng(getmLat(), getmLon());
 
         moveToCurrentLocation(googleMap, latLng);
-        addMarker(googleMap,"Your location","JV-IT",latLng);
+        addMarker(googleMap, "Your location", "JV-IT", latLng);
 
         if (mMapView != null
                 && mMapView.findViewById(Integer.parseInt("1")) != null) {
@@ -176,13 +213,12 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
                 public void onClick(View v) {
                     getCurrentLocation();
                     moveToCurrentLocation(googleMap, new LatLng(getmLat(), getmLon()));
-                    addMarker(googleMap,"Your location","JV-IT",new LatLng(getmLat(), getmLon()));
+                    addMarker(googleMap, "Your location", "JV-IT", new LatLng(getmLat(), getmLon()));
                 }
             });
 
         }
     }
-
 
     private void moveToCurrentLocation(GoogleMap googleMap, LatLng latLng) {
 
@@ -204,15 +240,24 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13));
 
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(latLng);
+
         mGoogleMap.moveCamera(cameraUpdate);
         mGoogleMap.animateCamera(cameraUpdate);
     }
 
-    private void addMarker(GoogleMap  mGoogleMap, String title,String snippet, LatLng latLng){
-        mGoogleMap.addMarker(new MarkerOptions()
-        .title(title)
-        .snippet(snippet)
-        .position(latLng)).showInfoWindow();
+    private void addMarker(GoogleMap mGoogleMap, String title, String snippet, LatLng latLng) {
+        CoreApplication.getInstance().logDebug(title + " title " + snippet);
+
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.title(title);
+        markerOptions.snippet(snippet);
+        markerOptions.position(latLng);
+
+        Marker marker = mGoogleMap.addMarker(markerOptions);
+        marker.showInfoWindow();
+        if (marker.isInfoWindowShown()){
+            CoreApplication.getInstance().logDebug("info window is showing");
+        }
     }
 
     private void handleMessage() {
@@ -262,15 +307,104 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
     }
 
     @Override
+    public void onAsyncTaskResult(ArrayList<PlaceModel> placeModels) {
+        for (int i = 0; i < placeModels.size(); i++) {
+            mPlaceArrayList.add(placeModels.get(i));
+        }
+        mRecyclerViewAdapter.notifyDataSetChanged();
+    }
+
+    @Override
     public void onItemClick(int position) {
         CoreApplication.getInstance().logDebug("item click");
 
-        double lat = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLat());
-        double lon = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLng());
-        moveToCurrentLocation(mGoogleMap,new LatLng(lat,lon));
-        addMarker(mGoogleMap,mResultsArrayList.get(position).getName(),
-                mResultsArrayList.get(position).getFormatted_address(),new LatLng(lat,lon));
+//        double lat = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLat());
+//        double lon = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLng());
+//        moveToCurrentLocation(mGoogleMap, new LatLng(lat, lon));
+//        addMarker(mGoogleMap, mResultsArrayList.get(position).getName(),
+//                mResultsArrayList.get(position).getFormatted_address(), new LatLng(lat, lon));
+//        mLinearLayoutSearch.setVisibility(View.GONE);
+//        mSearchPlaceEditText.setText("");
+
+        double lat = mPlaceArrayList.get(position).getmLocation().getmLat();
+        double lon = mPlaceArrayList.get(position).getmLocation().getmLon();
+        moveToCurrentLocation(mGoogleMap, new LatLng(lat, lon));
+
+        CoreApplication.getInstance().logDebug(mPlaceArrayList.get(position).getmName() + " name");
+
+        addMarker(mGoogleMap, mPlaceArrayList.get(position).getmName(), mPlaceArrayList.get(position).getmAddress(),
+                new LatLng(lat, lon));
+
+//        addMarker(mGoogleMap, mResultsArrayList.get(position).getName(),
+//                mResultsArrayList.get(position).getFormatted_address(), new LatLng(lat, lon));
+
+        mPlaceArrayList.clear();
+        mRecyclerViewAdapter.notifyDataSetChanged();
         mLinearLayoutSearch.setVisibility(View.GONE);
         mSearchPlaceEditText.setText("");
+    }
+
+
+    class async extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            StringBuilder sb = new StringBuilder();
+            CoreApplication.getInstance().logDebug("on do in background");
+            try {
+                URL url = new URL(strings[0]);
+                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
+
+                String line = null;
+                while ((line = bufferedReader.readLine()) != null) {
+                    sb.append(line);
+                }
+
+                JSONObject root = new JSONObject(sb.toString());
+                JSONArray resultsArray = root.getJSONArray("results");
+                for (int i = 0; i < resultsArray.length(); i++) {
+                    JSONObject jsonObject = resultsArray.getJSONObject(i);
+                    String address = jsonObject.getString("formatted_address");
+                    String name = jsonObject.getString("name");
+                    JSONObject geometry = jsonObject.getJSONObject("geometry");
+                    JSONObject location = geometry.getJSONObject("location");
+                    double lat = location.getDouble("lat");
+                    double lon = location.getDouble("lng");
+
+                    LocationModel locationModel = new LocationModel(lat, lon);
+                    PlaceModel placeModel = new PlaceModel(address, name, locationModel);
+
+                    mPlaceArrayList.add(placeModel);
+
+                    CoreApplication.getInstance().logDebug(placeModel.getmLocation().getmLat()
+                            + " / " + placeModel.getmLocation().getmLon() + " / "
+                            + placeModel.getmAddress());
+
+//                    mMainActivityModelListener.onAsyncTaskResult(mPlaceModel);
+
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            return sb.toString();
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            if (mPlaceArrayList.size() > 0) {
+                mLinearLayoutSearch.setVisibility(View.VISIBLE);
+                mRecyclerViewAdapter.notifyDataSetChanged();
+            }
+            CoreApplication.getInstance().logDebug("on post");
+            CoreApplication.getInstance().logDebug(s);
+        }
     }
 }

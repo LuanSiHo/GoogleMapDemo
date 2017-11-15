@@ -13,6 +13,10 @@ public class PlaceModel {
     @Expose
     private String mAddress;
 
+    @SerializedName("name")
+    @Expose
+    private String mName;
+
     @SerializedName("location")
     @Expose
     private LocationModel mLocation;
@@ -23,6 +27,12 @@ public class PlaceModel {
 
     public PlaceModel(String mAddress, LocationModel mLocation) {
         this.mAddress = mAddress;
+        this.mLocation = mLocation;
+    }
+
+    public PlaceModel(String mAddress, String mName, LocationModel mLocation) {
+        this.mAddress = mAddress;
+        this.mName = mName;
         this.mLocation = mLocation;
     }
 
@@ -40,5 +50,13 @@ public class PlaceModel {
 
     public void setmLocation(LocationModel mLocation) {
         this.mLocation = mLocation;
+    }
+
+    public String getmName() {
+        return mName;
+    }
+
+    public void setmName(String mName) {
+        this.mName = mName;
     }
 }

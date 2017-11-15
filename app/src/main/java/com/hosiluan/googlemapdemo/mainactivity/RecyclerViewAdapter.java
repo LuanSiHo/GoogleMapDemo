@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.hosiluan.googlemapdemo.R;
+import com.hosiluan.googlemapdemo.model.PlaceModel;
 import com.hosiluan.googlemapdemo.model.Results;
 
 import java.util.ArrayList;
@@ -20,27 +21,27 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
 
     private Context mContext;
-    private ArrayList<Results> mResults;
+//    private ArrayList<Results> mResults;
+    private ArrayList<PlaceModel> mPlaceModels;
     private  RecyclerViewAdapterListener mRecyclerViewAdapterListener;
 
-    public RecyclerViewAdapter(Context mContext, ArrayList<Results> mResults,
-                               RecyclerViewAdapterListener mRecyclerViewAdapterListener) {
+    public RecyclerViewAdapter(Context mContext, ArrayList<PlaceModel> mPlaceModels, RecyclerViewAdapterListener mRecyclerViewAdapterListener) {
         this.mContext = mContext;
-        this.mResults = mResults;
+        this.mPlaceModels = mPlaceModels;
         this.mRecyclerViewAdapterListener = mRecyclerViewAdapterListener;
     }
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(mContext).inflate(R.layout.item_place,parent,false);
+        View view = LayoutInflater.from(mContext).inflate(R.layout.item_place, parent, false);
         return new MyViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(MyViewHolder holder, final int position) {
-        Results results = mResults.get(position);
-        holder.placeTextView.setText(results.getName());
-        holder.addressTextView.setText(results.getFormatted_address());
+    public void onBindViewHolder(MyViewHolder holder, final  int position) {
+            PlaceModel placeModel = mPlaceModels.get(position);
+        holder.placeTextView.setText(placeModel.getmName());
+        holder.addressTextView.setText(placeModel.getmAddress());
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -52,11 +53,47 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public int getItemCount() {
-        if (mResults != null) {
-            return mResults.size();
+                if (mPlaceModels != null) {
+            return mPlaceModels.size();
         }
         return 0;
     }
+
+//    public RecyclerViewAdapter(Context mContext, ArrayList<Results> mResults,
+//                               RecyclerViewAdapterListener mRecyclerViewAdapterListener) {
+//        this.mContext = mContext;
+//        this.mResults = mResults;
+//        this.mRecyclerViewAdapterListener = mRecyclerViewAdapterListener;
+//    }
+//
+//    @Override
+//    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+//        View view = LayoutInflater.from(mContext).inflate(R.layout.item_place,parent,false);
+//        return new MyViewHolder(view);
+//    }
+//
+//    @Override
+//    public void onBindViewHolder(MyViewHolder holder, final int position) {
+//        Results results = mResults.get(position);
+//        holder.placeTextView.setText(results.getName());
+//        holder.addressTextView.setText(results.getFormatted_address());
+//
+//        holder.itemView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                mRecyclerViewAdapterListener.onItemClick(position);
+//            }
+//        });
+//    }
+//
+//    @Override
+//    public int getItemCount() {
+//        if (mResults != null) {
+//            return mResults.size();
+//        }
+//        return 0;
+//    }
+
 
     class MyViewHolder extends RecyclerView.ViewHolder {
 
