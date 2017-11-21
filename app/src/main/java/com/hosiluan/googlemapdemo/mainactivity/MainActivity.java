@@ -1,7 +1,6 @@
 package com.hosiluan.googlemapdemo.mainactivity;
 
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,14 +8,10 @@ import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -32,9 +27,12 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.hosiluan.googlemapdemo.BaseActivity;
 import com.hosiluan.googlemapdemo.CoreApplication;
 import com.hosiluan.googlemapdemo.R;
+import com.hosiluan.googlemapdemo.common.Common;
 import com.hosiluan.googlemapdemo.model.LocationModel;
 import com.hosiluan.googlemapdemo.model.PlaceModel;
 import com.hosiluan.googlemapdemo.model.Results;
+import com.hosiluan.googlemapdemo.retrofit.ApiUtils;
+import com.hosiluan.googlemapdemo.retrofit.PlaceService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -47,10 +45,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
-public class MainActivity extends BaseActivity implements OnMapReadyCallback,
-        MainActivityPresenter.MainActivitPresenterListener, RecyclerViewAdapter.RecyclerViewAdapterListener {
+public class MainActivity extends BaseActivity implements OnMapReadyCallback, RecyclerViewAdapter.RecyclerViewAdapterListener {
 
     ArrayList<PlaceModel> mPlaceModel = new ArrayList<>();
 
@@ -59,13 +56,14 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
     private ImageView mSearImageButton;
     private TextView mNumberOfPlaceTextView;
 
-    private MainActivityPresenter mMainActivityPresenter;
 
     private RecyclerView mRecyclerView;
     private ArrayList<Results> mResultsArrayList;
     private RecyclerViewAdapter mRecyclerViewAdapter;
     private LinearLayout mLinearLayoutSearch;
-    private ArrayList<PlaceModel> mPlaceArrayList;
+    private ArrayList<PlaceModel> mPlaceArrayList, mSavedPlaceList;
+    private PlaceService mPlaceService;
+
 
     View mMapView;
 
@@ -101,10 +99,10 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
         mSearImageButton = (ImageView) findViewById(R.id.img_btn_search);
         mNumberOfPlaceTextView = (TextView) findViewById(R.id.tv_number_of_place);
 
-        mMainActivityPresenter = new MainActivityPresenter(this);
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_place);
 
         mResultsArrayList = new ArrayList<>();
+        mSavedPlaceList = new ArrayList<>();
 
 //        mRecyclerViewAdapter = new RecyclerViewAdapter(getApplicationContext(), mResultsArrayList,
 //                this);
@@ -131,13 +129,12 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
 
                     mPlaceArrayList.clear();
                     mRecyclerViewAdapter.notifyDataSetChanged();
-                    mLinearLayoutSearch.setVisibility(View.VISIBLE);
 
                     String place = mSearchPlaceEditText.getText().toString().trim();
                     String text = place.replaceAll("\\s+", "%20");
 
                     new async().execute("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
-                            + text + "&key=AIzaSyAO2KYccvxhtise3plAZ47DA9a53GXdv4M");
+                            + text + "&key=AIzaSyDtOND-lFNNOYQrsDS-iqVJtW-aFDFCZj4");
 
                     CoreApplication.getInstance().logDebug("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
                             + text + "&key=AIzaSyAmVAh9yhy1g6M0wsiAjwzizJyQOyOa1vk");
@@ -147,43 +144,35 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
             }
         });
 
-
-        mSearchPlaceEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-
-                if (s.length() > 0) {
-//                    mLinearLayoutSearch.setVisibility(View.VISIBLE);
-////                    String text = s.toString().replaceAll("\\s+", " ");
-////                    if (text.length() > 0 && !text.equals(" ")) {
-//////                        mMainActivityPresenter.cancelRequest();
-////                        mMainActivityPresenter.searchPlace(text);
-////                    }
-////                    mMainActivityPresenter.searchPlace(mSearchPlaceEditText.getText().toString().trim());
 //
-                    String place = mSearchPlaceEditText.getText().toString().trim();
-                    new async().execute("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
-                            +place+"&key=AIzaSyB95jx_yE1DGcuTumosZ6XiOJ3Dv1IhCEc");
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-
-                if (s.length() <= 0 || s.equals(" ")) {
-                    CoreApplication.getInstance().logDebug("clear text");
-                    mResultsArrayList.clear();
-                    mRecyclerViewAdapter.notifyDataSetChanged();
-                    mLinearLayoutSearch.setVisibility(View.GONE);
-                }
-            }
-        });
+//        mSearchPlaceEditText.addTextChangedListener(new TextWatcher() {
+//            @Override
+//            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+//
+//            }
+//
+//            @Override
+//            public void onTextChanged(CharSequence s, int start, int before, int count) {
+//
+//                if (s.length() > 0) {
+//
+//                    String place = mSearchPlaceEditText.getText().toString().trim();
+//                    new async().execute("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
+//                            +place+"&key=AIzaSyB95jx_yE1DGcuTumosZ6XiOJ3Dv1IhCEc");
+//                }
+//            }
+//
+//            @Override
+//            public void afterTextChanged(Editable s) {
+//
+//                if (s.length() <= 0 || s.equals(" ")) {
+//                    CoreApplication.getInstance().logDebug("clear text");
+//                    mResultsArrayList.clear();
+//                    mRecyclerViewAdapter.notifyDataSetChanged();
+//                    mLinearLayoutSearch.setVisibility(View.GONE);
+//                }
+//            }
+//        });
     }
 
     public void createMap() {
@@ -191,17 +180,27 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
                 getSupportFragmentManager().findFragmentById(R.id.map_fragment);
         supportMapFragment.getMapAsync(this);
         mMapView = supportMapFragment.getView();
-
     }
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
 
-        Log.d("Luan", getmLat() + " / " + getmLon());
+        this.mGoogleMap = googleMap;
+
         LatLng latLng = new LatLng(getmLat(), getmLon());
 
         moveToCurrentLocation(googleMap, latLng);
         addMarker(googleMap, "Your location", "JV-IT", latLng);
+
+        // restore all markers after rotate screen
+        if (mSavedPlaceList != null) {
+            for (int i = 0; i < mSavedPlaceList.size(); i++) {
+                double lat = mSavedPlaceList.get(i).getmLocation().getmLat();
+                double lon = mSavedPlaceList.get(i).getmLocation().getmLon();
+                addMarker(mGoogleMap, mSavedPlaceList.get(i).getmName(), mSavedPlaceList.get(i).getmAddress(),
+                        new LatLng(lat, lon));
+            }
+        }
 
         if (mMapView != null
                 && mMapView.findViewById(Integer.parseInt("1")) != null) {
@@ -246,7 +245,6 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
     }
 
     private void addMarker(GoogleMap mGoogleMap, String title, String snippet, LatLng latLng) {
-        CoreApplication.getInstance().logDebug(title + " title " + snippet);
 
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.title(title);
@@ -255,9 +253,7 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
 
         Marker marker = mGoogleMap.addMarker(markerOptions);
         marker.showInfoWindow();
-        if (marker.isInfoWindowShown()){
-            CoreApplication.getInstance().logDebug("info window is showing");
-        }
+
     }
 
     private void handleMessage() {
@@ -275,13 +271,14 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
     }
 
     public void getCurrentLocation() {
+
+
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 if (checkLocationPermission()) {
                     getLocation();
                 } else {
-
                     requestLocationPermission();
                 }
             }
@@ -290,33 +287,7 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
     }
 
     @Override
-    public void onSearchResult(Results[] results) {
-        if (results.length > 0) {
-            CoreApplication.getInstance().logDebug(results[0].getFormatted_address());
-            CoreApplication.getInstance().logDebug(results.length + " length");
-
-            mResultsArrayList.clear();
-            mLinearLayoutSearch.setVisibility(View.VISIBLE);
-            mNumberOfPlaceTextView.setText(results.length + " places");
-
-            for (int i = 0; i < results.length; i++) {
-                mResultsArrayList.add(results[i]);
-                mRecyclerViewAdapter.notifyDataSetChanged();
-            }
-        }
-    }
-
-    @Override
-    public void onAsyncTaskResult(ArrayList<PlaceModel> placeModels) {
-        for (int i = 0; i < placeModels.size(); i++) {
-            mPlaceArrayList.add(placeModels.get(i));
-        }
-        mRecyclerViewAdapter.notifyDataSetChanged();
-    }
-
-    @Override
     public void onItemClick(int position) {
-        CoreApplication.getInstance().logDebug("item click");
 
 //        double lat = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLat());
 //        double lon = Double.parseDouble(mResultsArrayList.get(position).getGeometry().getLocation().getLng());
@@ -326,11 +297,12 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
 //        mLinearLayoutSearch.setVisibility(View.GONE);
 //        mSearchPlaceEditText.setText("");
 
+        mSavedPlaceList.add(mPlaceArrayList.get(position));
+
         double lat = mPlaceArrayList.get(position).getmLocation().getmLat();
         double lon = mPlaceArrayList.get(position).getmLocation().getmLon();
         moveToCurrentLocation(mGoogleMap, new LatLng(lat, lon));
 
-        CoreApplication.getInstance().logDebug(mPlaceArrayList.get(position).getmName() + " name");
 
         addMarker(mGoogleMap, mPlaceArrayList.get(position).getmName(), mPlaceArrayList.get(position).getmAddress(),
                 new LatLng(lat, lon));
@@ -380,7 +352,6 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
                     CoreApplication.getInstance().logDebug(placeModel.getmLocation().getmLat()
                             + " / " + placeModel.getmLocation().getmLon() + " / "
                             + placeModel.getmAddress());
-
 //                    mMainActivityModelListener.onAsyncTaskResult(mPlaceModel);
 
                 }
@@ -400,11 +371,148 @@ public class MainActivity extends BaseActivity implements OnMapReadyCallback,
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             if (mPlaceArrayList.size() > 0) {
+                if (mPlaceArrayList.size() == 1) {
+                    mNumberOfPlaceTextView.setText(mPlaceArrayList.size() + " place");
+                } else {
+                    mNumberOfPlaceTextView.setText(mPlaceArrayList.size() + " places");
+                }
                 mLinearLayoutSearch.setVisibility(View.VISIBLE);
                 mRecyclerViewAdapter.notifyDataSetChanged();
             }
             CoreApplication.getInstance().logDebug("on post");
             CoreApplication.getInstance().logDebug(s);
+        }
+    }
+
+    public void searchPlace(String place) {
+
+//        new async().execute("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
+//                +place+"&key=AIzaSyAmVAh9yhy1g6M0wsiAjwzizJyQOyOa1vk");
+//
+//        CoreApplication.getInstance().logDebug("https://maps.googleapis.com/maps/api/place/textsearch/json?query="
+//                +place+"&key=AIzaSyAmVAh9yhy1g6M0wsiAjwzizJyQOyOa1vk");
+
+        this.mPlaceService = ApiUtils.getPlaceService();
+//        Observable<MyPojo> observable = mPlaceService.getPlaceList(place,
+//                CoreApplication.getInstance().getResources().getString(R.string.map_api_key));
+//
+//        observable.subscribeOn(Schedulers.newThread())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new Observer<MyPojo>() {
+//                    @Override
+//                    public void onSubscribe(Disposable d) {
+//                        CoreApplication.getInstance().logDebug("subscribe");
+//                    }
+//
+//                    @Override
+//                    public void onNext(MyPojo myPojo) {
+//                        if (myPojo.getResults().length > 0) {
+//                            CoreApplication.getInstance().logDebug(myPojo.getResults()[0].getFormatted_address());
+//                            mMainActivityModelListener.onSearchResult(myPojo.getResults());
+//                        }else {
+//                            CoreApplication.getInstance().showToast("not found");
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onError(Throwable e) {
+//                        CoreApplication.getInstance().logDebug(e.toString());
+//                    }
+//
+//                    @Override
+//                    public void onComplete() {
+//                        CoreApplication.getInstance().logDebug("complete");
+//                    }
+//                });
+
+//        if (myPojoCall != null && myPojoCall.isExecuted()){
+//            myPojoCall.cancel();
+//        }
+
+//        Call<MyPojo> myPojoCall = mPlaceService.getPlaceList(place,
+//                CoreApplication.getInstance().getResources().getString(R.string.map_api_key));
+//        CoreApplication.getInstance().logDebug(place);
+//
+//        myPojoCall.enqueue(new Callback<MyPojo>() {
+//            @Override
+//            public void onResponse(Call<MyPojo> call, Response<MyPojo> response) {
+//                CoreApplication.getInstance().logDebug(response.toString());
+//                if (response.body().getResults().length > 0) {
+//                    CoreApplication.getInstance().logDebug(response.body().getResults()[0].getFormatted_address());
+//                    mMainActivityModelListener.onSearchResult(response.body().getResults());
+//                } else {
+//                    CoreApplication.getInstance().logDebug("not found");
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<MyPojo> call, Throwable t) {
+//                CoreApplication.getInstance().logDebug("fail" + t.toString());
+//            }
+//        });
+
+
+//        mPlaceService.getPlaceList(place,
+//                CoreApplication.getInstance().getResources().getString(R.string.map_api_key))
+//                .enqueue(new Callback<MyPojo>() {
+//            @Override
+//            public void onResponse(Call<MyPojo> call, Response<MyPojo> response) {
+//                if (response.body().getResults().length > 0){
+//                    CoreApplication.getInstance().logDebug(response.body().getResults()[0].getFormatted_address());
+//                    mMainActivityModelListener.onSearchResult(response.body().getResults());
+//                }else {
+//                    CoreApplication.getInstance().logDebug("not found");
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<MyPojo> call, Throwable t) {
+//
+//            }
+//        });
+    }
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+
+        outState.putParcelableArrayList(Common.SAVED_PLACE_LIST, mSavedPlaceList);
+        if (mPlaceArrayList.size() > 0) {
+            outState.putParcelableArrayList(Common.PLACE_LIST, mPlaceArrayList);
+        }
+        super.onSaveInstanceState(outState);
+
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        //restore marker list
+        mSavedPlaceList = savedInstanceState.getParcelableArrayList(Common.SAVED_PLACE_LIST);
+        if (mSavedPlaceList != null) {
+            CoreApplication.getInstance().logDebug(mSavedPlaceList.size() + " size");
+        }
+
+
+        //restore search result list
+        ArrayList<PlaceModel> placeModels = savedInstanceState.getParcelableArrayList(Common.PLACE_LIST);
+        if (placeModels != null) {
+            for (int i = 0; i < placeModels.size(); i++) {
+                mPlaceArrayList.add(placeModels.get(i));
+            }
+        }
+
+        if (mPlaceArrayList != null && mPlaceArrayList.size() > 0) {
+            if (mPlaceArrayList.size() == 1) {
+                mNumberOfPlaceTextView.setText(mPlaceArrayList.size() + " place");
+            } else if (mPlaceArrayList.size() > 1){
+                mNumberOfPlaceTextView.setText(mPlaceArrayList.size() + " places");
+            }
+            mLinearLayoutSearch.setVisibility(View.VISIBLE);
+            mRecyclerViewAdapter.notifyDataSetChanged();
+        } else {
+            CoreApplication.getInstance().logDebug("nulllllll");
         }
     }
 }

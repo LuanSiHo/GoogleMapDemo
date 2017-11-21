@@ -45,7 +45,6 @@
           android:textColor="#000"
           android:textSize="16sp"
           android:id="@+id/tv_number_of_place"
-          android:text="ahihi"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"/>
       <View
